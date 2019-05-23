@@ -5,18 +5,46 @@ class TodoItem extends React.Component {
     super(props);
 
     this.state = {
-      done: false
+      done: props.item.done
     };
   }
+
+  toggleDone = () => {
+    fetch(
+      `https://dashboard.heroku.com/apps/mfp-todo-list-api/todo/${
+        this.props.item.id
+      }`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: this.props.item.title,
+          done: !this.state.done
+        })
+      }
+    )
+      .then(
+        this.setState({
+          done: !this.state.done
+        })
+      )
+      .catch(error => console.log(error));
+  };
 
   render() {
     return (
       <div className="todo-item">
         <input
           type="checkbox"
-          onClick={() => this.setState({ done: !this.state.done })}
+          onClick={this.toggleDone}
+          defaultChecked={this.state.done}
         />
-        <p className={this.state.done ? "done" : null}>{this.props.title}</p>
+        <p className={this.state.done ? "done" : null}>
+          {this.props.item.title}
+        </p>
+        <button onClick={() => this.props.deleteItem(this.props.item.id)}>
+          X
+        </button>
       </div>
     );
   }

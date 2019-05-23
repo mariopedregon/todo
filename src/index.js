@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import axios from "axios";
 
 import TodoItem from "./todo-item";
 
@@ -15,6 +16,16 @@ class App extends React.Component {
     };
   }
 
+  componentDidMount() {
+    fetch("https://dashboard.heroku.com/apps/mfp-todo-list-api/todos")
+      .then(response => response.json())
+      .then(data =>
+        this.setState({
+          todos: data
+        })
+      );
+  }
+
   onChange = event => {
     this.setState({
       todo: event.target.value
@@ -23,16 +34,49 @@ class App extends React.Component {
 
   renderTodos = () => {
     return this.state.todos.map(item => {
-      return <TodoItem title={item} />;
+      return (
+        <TodoItem
+          key={item.id}
+          id={item.id}
+          item={item}
+          deleteItem={this.deleteItem}
+        />
+      );
     });
   };
 
   addTodo = event => {
     event.preventDefault();
-    this.setState({
-      todos: [...this.state.todos, this.state.todo],
-      todo: ""
-    });
+    axios({
+      method: "post",
+      url: "https://dashboard.heroku.com/apps/mfp-todo-list-api/add-todo",
+      headers: { "content-type": "application/json" },
+      data: {
+        title: this.state.todo,
+        done: false
+      }
+    })
+      .then(data => {
+        this.setState({
+          todos: [...this.state.todos, data.data],
+          todo: ""
+        });
+      })
+      .catch(error => console.log(error));
+  };
+
+  deleteItem = id => {
+    fetch(`https://dashboard.heroku.com/apps/mfp-todo-list-api/todo/${id}`, {
+      method: "DELETE"
+    })
+      .then(
+        this.setState({
+          todos: this.state.todos.filter(item => {
+            return item.id !== id;
+          })
+        })
+      )
+      .catch(error => console.log(error));
   };
 
   render() {
